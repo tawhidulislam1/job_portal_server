@@ -1,7 +1,7 @@
 const express = require("express");
 require("dotenv").config();
 const cors = require("cors");
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const app = express();
 const port = process.env.PORT || 5000;
 // miderware
@@ -32,11 +32,16 @@ async function run() {
     //APP related api
 
     app.get("/jobs", async (req, res) => {
-        const curser = portalCollection.find();
-        const result = await curser.toArray()
-        res.send(result)
+      const curser = portalCollection.find();
+      const result = await curser.toArray();
+      res.send(result);
     });
-
+    app.get("/jobs/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await portalCollection.findOne(query);
+      res.send(result);
+    });
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log(
