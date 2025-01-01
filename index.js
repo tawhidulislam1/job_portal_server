@@ -29,7 +29,9 @@ async function run() {
     await client.connect();
 
     const portalCollection = client.db("JobPortal").collection("jobs");
-    const jobApplicationCollection = client.db("JobPortal").collection("Job_Applicaton");
+    const jobApplicationCollection = client
+      .db("JobPortal")
+      .collection("Job_Applicaton");
     //APP related api
 
     app.get("/jobs", async (req, res) => {
@@ -43,11 +45,17 @@ async function run() {
       const result = await portalCollection.findOne(query);
       res.send(result);
     });
-    app.post("/job-application", async(req,res)=>{
+    app.get("/job-application", async (req, res) => {
+      const email = req.query.email;
+      const query = { application_email: email };
+      const result = await jobApplicationCollection.find(query).toArray();
+      res.send(result);
+    });
+    app.post("/job-application", async (req, res) => {
       const application = req.body;
-      const result = jobApplicationCollection.insertOne(application);
-      res.send(result)
-    })
+      const result = await jobApplicationCollection.insertOne(application);
+      res.send(result);
+    });
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log(
