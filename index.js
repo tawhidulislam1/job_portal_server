@@ -45,6 +45,12 @@ async function run() {
       const result = await portalCollection.findOne(query);
       res.send(result);
     });
+    app.post("/jobs", async (req, res) => {
+      const newJobs = req.body;
+      const result = await portalCollection.insertOne(newJobs);
+      res.send(result);
+    });
+
     app.get("/job-application", async (req, res) => {
       const email = req.query.email;
       const query = { application_email: email };
