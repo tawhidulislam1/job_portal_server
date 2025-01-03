@@ -1,12 +1,36 @@
 const express = require("express");
 require("dotenv").config();
+const jwt = require("jsonwebtoken");
 const cors = require("cors");
+const cookieParser = require("cookie-parser");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const app = express();
 const port = process.env.PORT || 5000;
 // miderware
-app.use(cors());
+app.use(
+  cors({
+    origin: ["http://localhost:5173"],
+    credentials: true,
+  })
+);
+app.use(cookieParser());
 app.use(express.json());
+
+const verifyTokeen = (req, res, next) => {
+  const token = req?.cookies?.token;
+
+  if (!token) {
+    return res.status(401).send({ message: "Unauthorized access" });
+  }
+
+  jwt.verify(token, process.env.DB_SECURE, (err, decoded) => {
+    if (err) {
+      return res.status(401).send({ message: "Unauthorized access" });
+    }
+    req.user = decoded;
+    next();
+  });
+};
 
 app.get("/", (req, res) => {
   res.send("job portal serve is working now...............");
@@ -32,6 +56,20 @@ async function run() {
     const jobApplicationCollection = client
       .db("JobPortal")
       .collection("Job_Applicaton");
+
+    //auth Related Api
+
+    app.post("/jwt", async (req, res) => {
+      const user = req.body;
+      const token = jwt.sign(user, process.env.DB_SECURE, { expiresIn: "1h" });
+      res
+        .cookie("token", token, {
+          httpOnly: true,
+          secure: false,
+        })
+        .send({ success: true });
+    });
+
     //APP related api
 
     app.get("/jobs", async (req, res) => {
@@ -56,9 +94,13 @@ async function run() {
       res.send(result);
     });
 
-    app.get("/job-application", async (req, res) => {
+    app.get("/job-application", verifyTokeen, async (req, res) => {
       const email = req.query.email;
       const query = { application_email: email };
+
+      if (req.user.email !== req.user.email) {
+        return res.status(403).send({ message: "äccess undifined" });
+      }
       const result = await jobApplicationCollection.find(query).toArray();
       for (const application of result) {
         const query = { _id: new ObjectId(application.job_id) };
