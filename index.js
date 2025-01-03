@@ -35,7 +35,12 @@ async function run() {
     //APP related api
 
     app.get("/jobs", async (req, res) => {
-      const curser = portalCollection.find();
+      const email = req.query.email;
+      let query = {};
+      if (email) {
+        query = { hr_email: email };
+      }
+      const curser = portalCollection.find(query);
       const result = await curser.toArray();
       res.send(result);
     });
@@ -72,6 +77,29 @@ async function run() {
       const result = await jobApplicationCollection.insertOne(application);
       res.send(result);
     });
+    app.get("/job-application/jobs/:job_id", async (req, res) => {
+      const jobId = req.params.job_id;
+      const query = { job_id: jobId };
+      const result = await jobApplicationCollection.find(query).toArray();
+      res.send(result);
+    });
+
+    app.patch("/job-application/:id", async (req, res) => {
+      const id = req.params.id;
+      const data = req.body;
+      const filter = { _id: new ObjectId(id) };
+      const updateDoc = {
+        $set: {
+          status: data.status,
+        },
+      };
+      const result = await jobApplicationCollection.updateOne(
+        filter,
+        updateDoc
+      );
+      res.send(result);
+    });
+
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log(
